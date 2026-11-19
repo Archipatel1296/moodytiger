@@ -8,11 +8,12 @@ import { AGENT_STEPS, draftOutreachEmail } from "@/lib/demo";
 const STATUS = {
   new: "bg-ink/10 text-ink/60",
   contacted: "bg-sun/20 text-sun",
-  replied: "bg-flame/20 text-tiger",
+  replied: "bg-sky/20 text-sky",
   partnered: "bg-green-500/20 text-green-400",
 };
 
 function fmt(n) {
+  if (n == null) return "—";
   return n >= 1000 ? (n / 1000).toFixed(0) + "K" : n;
 }
 
@@ -24,6 +25,7 @@ export default function AdminInfluencers() {
   const [revealed, setRevealed] = useState(false);
   const [platform, setPlatform] = useState("All");
   const [draft, setDraft] = useState(null); // {inf, body}
+  const [source, setSource] = useState(null); // "serpapi" | "demo"
   const timers = useRef([]);
 
   useEffect(() => {
@@ -36,12 +38,32 @@ export default function AdminInfluencers() {
     setRunning(true);
     setRevealed(false);
     setLog([]);
+    setSource(null);
+
+    // Kick off the real SerpAPI search in parallel with the step animation.
+    const search = fetch("/api/discover", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ niche: "kids family mom activewear", location: "Bay Area San Francisco" }),
+    }).then((r) => r.json()).catch(() => ({ ok: false, results: [] }));
+
     let t = 0;
     AGENT_STEPS.forEach((step) => {
       t += step.ms;
       timers.current.push(setTimeout(() => setLog((l) => [...l, step.label]), t));
     });
-    timers.current.push(setTimeout(() => { setRunning(false); setRevealed(true); }, t + 500));
+
+    timers.current.push(setTimeout(async () => {
+      const res = await search;
+      if (res.ok && res.results && res.results.length) {
+        setList(res.results.map((x) => ({ ...x, status: x.status || "new" })));
+        setSource("serpapi");
+      } else {
+        setSource("demo");
+      }
+      setRunning(false);
+      setRevealed(true);
+    }, t + 500));
   }
 
   function setStatus(handle, status) {
@@ -95,14 +117,19 @@ export default function AdminInfluencers() {
             ))}
             {running && (
               <div className="flex items-center gap-2 text-ink/50">
-                <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-flame border-t-transparent" />
-                analyzing…
+                <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-tiger border-t-transparent" />
+                searching the web…
               </div>
             )}
           </div>
-          {revealed && (
-            <p className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm text-green-300">
-              Ranked {list.length} best-fit creators below. Review and draft outreach with one click.
+          {revealed && source === "serpapi" && (
+            <p className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm text-ink">
+              🔎 Found {list.length} real creators via live web search. Open a profile to verify, then draft outreach.
+            </p>
+          )}
+          {revealed && source === "demo" && (
+            <p className="mt-4 rounded-xl border border-sun/40 bg-sun/10 px-4 py-2 text-sm text-ink">
+              Showing sample creators — add a <span className="font-mono">SERPAPI_KEY</span> in Vercel to pull live web results.
             </p>
           )}
         </div>
@@ -141,11 +168,16 @@ export default function AdminInfluencers() {
                   <td className="p-4">
                     <div className="font-semibold text-ink">{x.name}</div>
                     <div className="text-xs text-tiger">{x.handle}</div>
-                    <div className="mt-1 max-w-[220px] text-xs text-ink/45">{x.notes}</div>
+                    <div className="mt-1 max-w-[260px] text-xs text-ink/45">{x.notes}</div>
+                    {x.profileUrl && (
+                      <a href={x.profileUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs font-semibold text-sky hover:underline">
+                        View profile ↗
+                      </a>
+                    )}
                   </td>
                   <td className="p-4 text-ink/70">{x.platform}</td>
                   <td className="p-4 text-ink/70">{fmt(x.followers)}</td>
-                  <td className="p-4 text-ink/70">{x.er}%</td>
+                  <td className="p-4 text-ink/70">{x.er != null ? x.er + "%" : "—"}</td>
                   <td className="p-4 text-ink/60">{x.city}</td>
                   <td className="p-4">
                     <span className={`rounded-md px-2 py-1 text-xs font-bold ${x.fit >= 90 ? "bg-green-500/20 text-green-400" : x.fit >= 75 ? "bg-sun/20 text-sun" : "bg-ink/10 text-ink/50"}`}>
