@@ -101,20 +101,14 @@ function Designer({ onClose, onSchedule }) {
   const [audience, setAudience] = useState("Bay Area parents");
   const [plan, setPlan] = useState(null);
   const [working, setWorking] = useState(false);
-  const [creative, setCreative] = useState(null); // {status}
   const goalMeta = GOALS.find((g) => g.id === goal);
 
   function run() {
-    setWorking(true); setPlan(null); setCreative(null);
+    setWorking(true); setPlan(null);
     setTimeout(() => {
       setPlan(generatePlan({ goal, detail, channel, audience, audienceSize: AUD_SIZE[audience] || 0 }));
       setWorking(false);
     }, 750);
-  }
-
-  function generateCreative() {
-    setCreative({ status: "working" });
-    setTimeout(() => setCreative({ status: "done" }), 2200);
   }
 
   return (
@@ -187,27 +181,22 @@ function Designer({ onClose, onSchedule }) {
             <Block label="Creative (Framia)">
               <p className="text-sm text-ink/80">{plan.creative.concept}</p>
               <div className="mt-3 rounded-xl2 border border-ink/10 bg-cloud p-3">
-                <div className="text-xs font-semibold uppercase tracking-wide text-mute">Framia prompt</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-mute">Framia prompt</div>
+                  <button onClick={() => navigator.clipboard?.writeText(plan.creative.framiaPrompt)}
+                    className="text-xs font-semibold text-tiger hover:underline">Copy prompt</button>
+                </div>
                 <p className="mt-1 text-xs text-ink/70">{plan.creative.framiaPrompt}</p>
               </div>
-              {!creative && (
-                <button onClick={generateCreative} className="pill-ghost mt-3 text-sm">🎬 Generate with Framia</button>
-              )}
-              {creative?.status === "working" && (
-                <div className="mt-3 flex items-center gap-2 text-sm text-mute">
-                  <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-tiger border-t-transparent" />
-                  Framia is generating the ad video…
-                </div>
-              )}
-              {creative?.status === "done" && (
-                <div className="mt-3 flex items-center gap-3 rounded-xl2 border border-ink/10 bg-white p-3">
-                  <div className="flex h-16 w-28 items-center justify-center rounded-lg bg-gradient-to-br from-tiger/20 to-sky/20 text-2xl">▶️</div>
-                  <div className="text-xs text-mute">
-                    <div className="font-semibold text-ink">ad_moodytiger_9x16.mp4</div>
-                    Preview ready (demo). Connect Framia via MCP to generate the real video.
-                  </div>
-                </div>
-              )}
+              <a
+                href="https://framia.converge.ai/create/"
+                target="_blank"
+                rel="noreferrer"
+                className="pill-ghost mt-3 inline-flex text-sm"
+              >
+                🎬 Generate with Framia ↗
+              </a>
+              <p className="mt-2 text-xs text-mute">Opens Framia — paste the prompt above to generate the ad video.</p>
             </Block>
 
             <div className="flex flex-wrap gap-2 border-t border-ink/10 pt-4">

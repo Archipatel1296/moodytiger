@@ -122,14 +122,14 @@ export default function AdminInfluencers() {
               </div>
             )}
           </div>
-          {revealed && source === "serpapi" && (
+          {revealed && source && source !== "demo" && (
             <p className="mt-4 rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm text-ink">
-              🔎 Found {list.length} real creators via live web search. Open a profile to verify, then draft outreach.
+              🔎 Found {list.length} real creators via {source === "apollo" ? "Apollo" : source === "serpapi" ? "web search" : "Apollo + web search"}. Open a profile to verify, then draft outreach.
             </p>
           )}
           {revealed && source === "demo" && (
             <p className="mt-4 rounded-xl border border-sun/40 bg-sun/10 px-4 py-2 text-sm text-ink">
-              Showing sample creators — add a <span className="font-mono">SERPAPI_KEY</span> in Vercel to pull live web results.
+              Showing sample creators — add an <span className="font-mono">APOLLO_API_KEY</span> (and/or <span className="font-mono">SERPAPI_KEY</span>) in Vercel to pull live results.
             </p>
           )}
         </div>
