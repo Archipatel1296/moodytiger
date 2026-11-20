@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Header } from "@/app/admin/page";
+import { PageActions } from "@/components/AdminUI";
 import { getCampaigns, saveCampaign } from "@/lib/analytics";
 import { generatePlan, GOALS } from "@/lib/campaigngen";
 import { hasSupabase } from "@/lib/supabaseClient";
@@ -38,13 +38,11 @@ export default function CreatorStudio() {
 
   return (
     <div>
-      <Header
-        title="Creator Studio"
-        subtitle="Design social campaigns, generate creatives, and post them."
-        right={<button onClick={() => setDesigner(true)} className="pill-primary text-sm">✨ Design a campaign</button>}
-      />
+      <PageActions>
+        <button onClick={() => setDesigner(true)} className="pill-primary text-sm">✨ Design a campaign</button>
+      </PageActions>
 
-      {flash && <div className="mb-4 rounded-xl2 border border-lime/40 bg-lime/10 px-4 py-3 text-sm text-ink">{flash}</div>}
+      {flash && <div className="mb-4 rounded-2xl border border-lime/40 bg-lime/10 px-4 py-3 text-sm text-ink">{flash}</div>}
 
       {/* quick templates */}
       <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">

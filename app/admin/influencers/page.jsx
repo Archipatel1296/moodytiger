@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Header } from "@/app/admin/page";
+import { PageActions } from "@/components/AdminUI";
 import { getInfluencers } from "@/lib/analytics";
 import { AGENT_STEPS, draftOutreachEmail } from "@/lib/demo";
 
@@ -80,15 +80,11 @@ export default function AdminInfluencers() {
 
   return (
     <div>
-      <Header
-        title="Local Creators"
-        subtitle="Find Bay Area family & kids creators, score fit, and run outreach."
-        right={
-          <button onClick={runAgent} className="pill-primary text-sm">
-            ✨ Run discovery agent
-          </button>
-        }
-      />
+      <PageActions>
+        <button onClick={runAgent} className="pill-primary text-sm">
+          ✨ Run discovery agent
+        </button>
+      </PageActions>
 
       {/* pipeline */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

@@ -16,6 +16,8 @@ module.exports = {
         lime: "#5BC236",    // fresh green
         sun: "#FFC53D",     // sunny yellow
         grape: "#8B5CF6",   // playful purple accent
+        surface: "#F5F6F8", // dashboard app background
+        line: "#E8EAEF",    // hairline borders
       },
       fontFamily: {
         display: ['"Fredoka"', "system-ui", "sans-serif"],
@@ -24,6 +26,8 @@ module.exports = {
       boxShadow: {
         soft: "0 10px 30px -12px rgba(27,27,47,0.18)",
         pop: "0 8px 20px -6px rgba(255,107,53,0.45)",
+        card: "0 1px 2px rgba(16,24,40,0.04), 0 12px 28px -18px rgba(16,24,40,0.22)",
+        lift: "0 10px 40px -12px rgba(16,24,40,0.18)",
       },
       borderRadius: {
         xl2: "1.25rem",
