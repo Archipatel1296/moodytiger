@@ -18,7 +18,15 @@ export default function CreatorStudio() {
   const [capture, setCapture] = useState(false);
   const [capText, setCapText] = useState("");
   const [saved, setSaved] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   const active = TABS.find((t) => t.id === tab);
+  const svc = tab === "covey" ? "Covey" : "Framia";
+
+  function signIn() {
+    // Sign in to the service in a first-party popup (its login page can't be iframed),
+    // then reload the panel to pick up the session.
+    window.open(active.url, "converge_signin", "width=480,height=760,noopener=no");
+  }
 
   function sendToTodo(e) {
     e.preventDefault();
@@ -50,9 +58,11 @@ export default function CreatorStudio() {
           ))}
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           {saved && <span className="text-xs font-semibold text-lime">Added to To-do ✓</span>}
           <button onClick={() => setCapture((v) => !v)} className="pill-ghost text-sm">＋ To-do</button>
+          <button onClick={signIn} className="pill-ghost text-sm">Sign in to {svc} ↗</button>
+          <button onClick={() => setReloadKey((k) => k + 1)} title="Reload panel" className="pill-ghost text-sm">⟳</button>
           <a href={active.url} target="_blank" rel="noreferrer" className="pill-ghost text-sm inline-flex items-center gap-1">
             Open in new tab <Icon name="external" size={14} />
           </a>
@@ -73,20 +83,22 @@ export default function CreatorStudio() {
         </form>
       )}
 
-      {/* sign-in hint (in-panel login, no redirect) */}
+      {/* sign-in hint */}
       <div className="mb-2 text-center text-xs text-mute">
-        First time? Sign in to {tab === "covey" ? "Covey" : "Framia"} right in this panel — you stay in your dashboard. If it stays blank, use “Open in new tab”.
+        First time? Hit <span className="font-semibold text-ink">Sign in to {svc}</span> (opens a quick popup), then <span className="font-semibold text-ink">⟳</span>. If your browser blocks embedded sessions, use “Open in new tab”.
       </div>
 
-      {/* seamless embed — both mounted so switching keeps your session */}
+      {/* seamless embed — both mounted so switching keeps your session.
+          sandbox withholds allow-top-navigation so neither app can hijack the page. */}
       <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-line" style={{ height: "calc(100vh - 210px)", minHeight: 520 }}>
         {TABS.map((t) => (
           <iframe
-            key={t.id}
+            key={`${t.id}-${reloadKey}`}
             src={t.url}
             title={t.title}
             className={`h-full w-full border-0 ${tab === t.id ? "block" : "hidden"}`}
             allow="clipboard-write; fullscreen; microphone; camera"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads"
           />
         ))}
       </div>
