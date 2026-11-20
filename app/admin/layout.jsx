@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import AdminNav from "@/components/AdminNav";
+import AdminTopbar from "@/components/AdminTopbar";
 import { adminUser } from "@/lib/admin";
 
 export default function AdminLayout({ children }) {
@@ -28,17 +29,18 @@ export default function AdminLayout({ children }) {
 
   if (state !== "ok") {
     return (
-      <div className="bg-play flex min-h-screen items-center justify-center text-ink/50">
+      <div className="bg-app flex min-h-screen items-center justify-center text-mute">
         {state === "checking" ? "Checking access…" : "Redirecting to sign in…"}
       </div>
     );
   }
 
   return (
-    <div className="bg-play flex min-h-screen">
+    <div className="bg-app flex min-h-screen">
       <AdminNav />
-      <div className="min-w-0 flex-1 overflow-x-hidden">
-        <div className="mx-auto max-w-6xl px-6 py-8">{children}</div>
+      <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
+        <AdminTopbar />
+        <main className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8">{children}</main>
       </div>
     </div>
   );

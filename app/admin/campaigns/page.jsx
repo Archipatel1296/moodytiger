@@ -1,252 +1,126 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Header } from "@/app/admin/page";
-import { getCampaigns, saveCampaign } from "@/lib/analytics";
-import { generatePlan, GOALS } from "@/lib/campaigngen";
-import { hasSupabase } from "@/lib/supabaseClient";
+import { useState } from "react";
+import { Icon } from "@/components/AdminUI";
+import { addTask } from "@/lib/tasks";
 
-const AUDIENCES = ["Bay Area parents", "All followers", "Miles members", "Lapsed shoppers", "New parents"];
-const AUD_SIZE = { "Bay Area parents": 18000, "All followers": 82000, "Miles members": 2140, "Lapsed shoppers": 3200, "New parents": 5400 };
+const COVEY_URL =
+  "https://covey.converge.ai/w/b6000568-438d-4399-8274-0371d052b085/agents/17af9b99-8703-5281-b80a-6d9bd4bf4a08";
+const FRAMIA_URL = "https://framia.converge.ai/create/";
+
+const TOOLS = [
+  {
+    id: "covey",
+    name: "Campaign Studio",
+    by: "Powered by Covey",
+    icon: "creator",
+    tint: "#FF6B35",
+    desc: "Chat with your Covey agent to brainstorm campaign ideas, build the full strategy, content calendar and ready-to-post captions.",
+    cta: "Open Campaign Studio",
+    url: COVEY_URL,
+    points: ["Marketing campaign ideas", "End-to-end campaign strategy", "Captions + content calendar"],
+  },
+  {
+    id: "framia",
+    name: "Ad Video Studio",
+    by: "Powered by Framia",
+    icon: "reports",
+    tint: "#2DA7FF",
+    desc: "Turn your campaign into scroll-stopping reels and ad videos with Framia's AI video studio, then post them to your channels.",
+    cta: "Open Ad Video Studio",
+    url: FRAMIA_URL,
+    points: ["Reels & short-form ads", "Product + lifestyle video", "Export and publish"],
+  },
+];
+
+const STEPS = [
+  { n: 1, t: "Design in Covey", d: "Ideas, strategy and copy from your agent." },
+  { n: 2, t: "Capture to To-do", d: "Push action items into your To-do list." },
+  { n: 3, t: "Make the video in Framia", d: "Generate the reel and publish." },
+];
 
 export default function CreatorStudio() {
-  const [rows, setRows] = useState([]);
-  const [designer, setDesigner] = useState(false);
-  const [flash, setFlash] = useState("");
+  const [capText, setCapText] = useState("");
+  const [saved, setSaved] = useState(false);
 
-  async function load() { setRows(await getCampaigns()); }
-  useEffect(() => { load(); }, []);
-
-  async function schedule(plan, when) {
-    for (const p of plan.posts) {
-      // eslint-disable-next-line no-await-in-loop
-      const saved = await saveCampaign({
-        name: `${plan.title} · ${p.platform}`,
-        channel: p.platform,
-        audience: plan.audience.segment,
-        body: p.caption,
-        sent: 0, opened: 0, redeemed: 0,
-        status: when === "now" ? "Posted" : "Scheduled",
-        date: when === "now" ? new Date().toISOString().slice(0, 10) : "—",
-      });
-      setRows((r) => [saved, ...r]);
+  function sendToTodo(e) {
+    e.preventDefault();
+    const t = addTask({ text: capText, tag: "Creator Studio" });
+    if (t) {
+      setCapText("");
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2200);
     }
-    setDesigner(false);
-    setFlash(when === "now" ? "✅ Posted to the connected channels." : "🗓️ Scheduled — added to the calendar.");
-    setTimeout(() => setFlash(""), 4000);
   }
 
   return (
     <div>
-      <Header
-        title="Creator Studio"
-        subtitle="Design social campaigns, generate creatives, and post them."
-        right={<button onClick={() => setDesigner(true)} className="pill-primary text-sm">✨ Design a campaign</button>}
-      />
+      {/* launcher cards */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        {TOOLS.map((tool) => (
+          <div key={tool.id} className="card flex flex-col p-6">
+            <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-ink" style={{ background: `${tool.tint}1a`, color: tool.tint }}>
+                <Icon name={tool.icon} size={24} />
+              </span>
+              <div>
+                <div className="display text-xl text-ink">{tool.name}</div>
+                <div className="text-xs font-semibold uppercase tracking-widest text-mute">{tool.by}</div>
+              </div>
+            </div>
 
-      {flash && <div className="mb-4 rounded-xl2 border border-lime/40 bg-lime/10 px-4 py-3 text-sm text-ink">{flash}</div>}
+            <p className="mt-4 text-sm text-mute">{tool.desc}</p>
 
-      {/* quick templates */}
-      <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        {GOALS.map((g) => (
-          <button key={g.id} onClick={() => setDesigner(true)} className="card p-4 text-left transition hover:border-tiger">
-            <div className="text-2xl">{["🧥", "🎒", "📍", "🎾", "🎟️", "🎁"][GOALS.indexOf(g)]}</div>
-            <div className="mt-2 text-sm font-semibold text-ink">{g.label}</div>
-          </button>
+            <ul className="mt-4 space-y-1.5">
+              {tool.points.map((p) => (
+                <li key={p} className="flex items-center gap-2 text-sm text-ink/80">
+                  <span className="text-lime">✓</span> {p}
+                </li>
+              ))}
+            </ul>
+
+            <div className="mt-auto pt-6">
+              <a href={tool.url} target="_blank" rel="noreferrer" className="pill-primary inline-flex w-full items-center justify-center gap-2">
+                {tool.cta} <Icon name="external" size={16} />
+              </a>
+              <p className="mt-2 text-center text-[11px] text-mute">Opens {tool.by.replace("Powered by ", "")} in a new tab — sign in once and you’re set.</p>
+            </div>
+          </div>
         ))}
       </div>
 
-      {/* scheduled / posted */}
-      <div className="mt-6 card overflow-hidden">
-        <div className="border-b border-ink/10 p-4 text-sm font-bold uppercase tracking-widest text-tiger">
-          Scheduled & posted
-        </div>
-        <div className="scroll-thin overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs uppercase tracking-wide text-mute">
-              <tr>
-                <th className="p-4">Campaign</th><th className="p-4">Channel</th>
-                <th className="p-4">Audience</th><th className="p-4">Reach</th>
-                <th className="p-4">Engaged</th><th className="p-4">Conv.</th><th className="p-4">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((c, i) => (
-                <tr key={c.id || i} className="border-t border-ink/5">
-                  <td className="p-4 font-medium text-ink">{c.name}</td>
-                  <td className="p-4 text-ink/70">{c.channel}</td>
-                  <td className="p-4 text-mute">{c.audience}</td>
-                  <td className="p-4 text-ink/70">{c.sent ? c.sent.toLocaleString() : "—"}</td>
-                  <td className="p-4 text-ink/70">{c.opened ? c.opened.toLocaleString() : "—"}</td>
-                  <td className="p-4 text-tiger">{c.redeemed || "—"}</td>
-                  <td className="p-4">
-                    <span className={`chip ${c.status === "Posted" ? "bg-lime/20 text-ink" : c.status === "Scheduled" ? "bg-sky/20 text-ink" : "bg-ink/10 text-mute"}`}>{c.status}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {designer && <Designer onClose={() => setDesigner(false)} onSchedule={schedule} />}
-    </div>
-  );
-}
-
-function Designer({ onClose, onSchedule }) {
-  const [goal, setGoal] = useState(GOALS[0].id);
-  const [detail, setDetail] = useState("");
-  const [channel, setChannel] = useState("Instagram");
-  const [audience, setAudience] = useState("Bay Area parents");
-  const [plan, setPlan] = useState(null);
-  const [working, setWorking] = useState(false);
-  const [creative, setCreative] = useState(null); // {status}
-  const goalMeta = GOALS.find((g) => g.id === goal);
-
-  function run() {
-    setWorking(true); setPlan(null); setCreative(null);
-    setTimeout(() => {
-      setPlan(generatePlan({ goal, detail, channel, audience, audienceSize: AUD_SIZE[audience] || 0 }));
-      setWorking(false);
-    }, 750);
-  }
-
-  function generateCreative() {
-    setCreative({ status: "working" });
-    setTimeout(() => setCreative({ status: "done" }), 2200);
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-auto bg-black/40 p-4" onClick={onClose}>
-      <div className="card my-8 w-full max-w-2xl p-6" onClick={(e) => e.stopPropagation()}>
+      {/* capture to to-do */}
+      <div className="card mt-5 p-6">
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="display text-xl text-ink">✨ Campaign designer</h3>
-            <p className="text-xs text-mute">Pick a goal — the studio designs the strategy, writes the posts, and briefs the creative.</p>
-          </div>
-          <button onClick={onClose} className="text-mute hover:text-ink">✕</button>
+          <h3 className="text-sm font-bold uppercase tracking-widest text-ink/70">Capture a to-do</h3>
+          {saved && <span className="text-xs font-semibold text-lime">Added to To-do ✓</span>}
         </div>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <Select label="Goal" value={goal} onChange={(v) => { setGoal(v); setPlan(null); }}>
-            {GOALS.map((g) => <option key={g.id} value={g.id}>{g.label}</option>)}
-          </Select>
-          {goalMeta?.detail && <Text label={goalMeta.detail} value={detail} onChange={setDetail} />}
-          <Select label="Lead platform" value={channel} onChange={setChannel}>
-            <option>Instagram</option><option>TikTok</option><option>Email (Miles)</option>
-          </Select>
-          <Select label="Audience" value={audience} onChange={setAudience}>
-            {AUDIENCES.map((a) => <option key={a}>{a}</option>)}
-          </Select>
-        </div>
-
-        <button onClick={run} disabled={working} className="pill-primary mt-4 w-full !py-3 disabled:opacity-60">
-          {working ? "Designing…" : plan ? "Regenerate" : "Design campaign"}
-        </button>
-
-        {plan && (
-          <div className="mt-6 space-y-5">
-            <Block label="Objective"><p className="text-sm text-ink/85">{plan.objective}</p></Block>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Block label="Audience">
-                <p className="text-sm text-ink/85">{plan.audience.segment} · ~{plan.audience.size.toLocaleString()}</p>
-                <p className="mt-1 text-xs text-mute">{plan.audience.why}</p>
-              </Block>
-              <Block label="Offer"><p className="text-sm text-ink/85">{plan.offer}</p></Block>
-            </div>
-
-            <Block label="Content calendar">
-              <ol className="space-y-2">
-                {plan.calendar.map((c, i) => (
-                  <li key={i} className="flex flex-wrap gap-x-3 text-sm">
-                    <span className="w-24 shrink-0 font-semibold text-tiger">{c.when}</span>
-                    <span className="w-24 shrink-0 text-sky">{c.channel}</span>
-                    <span className="text-ink/75">{c.format} — {c.idea}</span>
-                  </li>
-                ))}
-              </ol>
-            </Block>
-
-            <Block label="Ready-to-post">
-              <div className="space-y-3">
-                {plan.posts.map((p, i) => (
-                  <div key={i} className="panel p-4">
-                    <div className="flex items-center justify-between">
-                      <span className="chip bg-ink/10 text-ink">{p.platform}</span>
-                      <button onClick={() => navigator.clipboard?.writeText(p.caption + "\n\n" + p.hashtags.join(" "))}
-                        className="text-xs font-semibold text-tiger hover:underline">Copy</button>
-                    </div>
-                    <p className="mt-2 whitespace-pre-wrap text-sm text-ink/85">{p.caption}</p>
-                    <p className="mt-2 text-xs text-sky">{p.hashtags.join(" ")}</p>
-                  </div>
-                ))}
-              </div>
-            </Block>
-
-            <Block label="Creative (Framia)">
-              <p className="text-sm text-ink/80">{plan.creative.concept}</p>
-              <div className="mt-3 rounded-xl2 border border-ink/10 bg-cloud p-3">
-                <div className="text-xs font-semibold uppercase tracking-wide text-mute">Framia prompt</div>
-                <p className="mt-1 text-xs text-ink/70">{plan.creative.framiaPrompt}</p>
-              </div>
-              {!creative && (
-                <button onClick={generateCreative} className="pill-ghost mt-3 text-sm">🎬 Generate with Framia</button>
-              )}
-              {creative?.status === "working" && (
-                <div className="mt-3 flex items-center gap-2 text-sm text-mute">
-                  <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-tiger border-t-transparent" />
-                  Framia is generating the ad video…
-                </div>
-              )}
-              {creative?.status === "done" && (
-                <div className="mt-3 flex items-center gap-3 rounded-xl2 border border-ink/10 bg-white p-3">
-                  <div className="flex h-16 w-28 items-center justify-center rounded-lg bg-gradient-to-br from-tiger/20 to-sky/20 text-2xl">▶️</div>
-                  <div className="text-xs text-mute">
-                    <div className="font-semibold text-ink">ad_moodytiger_9x16.mp4</div>
-                    Preview ready (demo). Connect Framia via MCP to generate the real video.
-                  </div>
-                </div>
-              )}
-            </Block>
-
-            <div className="flex flex-wrap gap-2 border-t border-ink/10 pt-4">
-              <button onClick={() => onSchedule(plan, "schedule")} className="pill-ghost">🗓️ Schedule</button>
-              <button onClick={() => onSchedule(plan, "now")} className="pill-primary">Post now</button>
-            </div>
-            {!hasSupabase && <p className="text-xs text-mute">Demo mode — scheduling/posting is simulated.</p>}
-          </div>
-        )}
+        <p className="mt-1 text-sm text-mute">Got an action item from your campaign chat? Drop it here and it lands on your To-do list.</p>
+        <form onSubmit={sendToTodo} className="mt-3 flex gap-2">
+          <input
+            value={capText}
+            onChange={(e) => setCapText(e.target.value)}
+            placeholder="e.g. Shoot UGC with @activekidssf this weekend"
+            className="field flex-1"
+          />
+          <button type="submit" className="pill-primary">Add to To-do</button>
+        </form>
       </div>
-    </div>
-  );
-}
 
-function Select({ label, value, onChange, children }) {
-  return (
-    <label className="block">
-      <span className="text-xs text-mute">{label}</span>
-      <select value={value} onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-xl2 border border-ink/15 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-tiger">
-        {children}
-      </select>
-    </label>
-  );
-}
-function Text({ label, value, onChange }) {
-  return (
-    <label className="block">
-      <span className="text-xs text-mute">{label}</span>
-      <input value={value} onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-xl2 border border-ink/15 bg-white px-4 py-2.5 text-sm text-ink outline-none focus:border-tiger" />
-    </label>
-  );
-}
-function Block({ label, children }) {
-  return (
-    <div>
-      <div className="mb-2 text-xs font-bold uppercase tracking-widest text-tiger">{label}</div>
-      {children}
+      {/* how it works */}
+      <div className="mt-5 grid gap-4 sm:grid-cols-3">
+        {STEPS.map((s) => (
+          <div key={s.n} className="panel flex items-start gap-3 p-5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-tiger text-sm font-bold text-white">{s.n}</span>
+            <div>
+              <div className="font-semibold text-ink">{s.t}</div>
+              <div className="text-xs text-mute">{s.d}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-6 text-center text-xs text-mute">Powered by Converge.AI · Covey designs the campaign · Framia turns it into the ad video</p>
     </div>
   );
 }
